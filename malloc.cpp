@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 #endif
 
+#include <cassert>
 #include <cstddef>
 #include <iostream>
 #include <unordered_map>
@@ -12,7 +13,8 @@
 static __thread int hooked = 0;
 static __thread void *(*orig_malloc)(size_t) = NULL;
 
-std::unordered_map<size_t, size_t>* maps[1024] = { NULL };
+static constexpr size_t MAX_MAPS = 1024;
+std::unordered_map<size_t, size_t>* maps[MAX_MAPS] = { NULL };
 
 __attribute((destructor)) static void done(void)
 {
@@ -28,6 +30,7 @@ __attribute((destructor)) static void done(void)
 void hook(size_t len)
 {
    auto tid = omp_get_thread_num();
+   assert(tid < MAX_MAPS);
    if (!maps[tid])
       maps[tid] = new std::unordered_map<size_t, size_t>;
    maps[tid]->operator[](len)++;
