@@ -10,7 +10,10 @@ CCFLAGS += -I$(BOOST_ROOT) -DHAVE_BOOST
 PROGRAMS = glibc ht stress
 
 .PHONY: all
-all: $(PROGRAMS)
+all: $(PROGRAMS) malloc.so
 
 $(PROGRAMS): % : %.cpp
 	$(CC) $(CCFLAGS) -o $@ $<
+
+malloc.so: malloc.cpp
+	g++ -shared -fPIC -fopenmp -o $@ $< -lpthread -ldl

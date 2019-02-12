@@ -13,13 +13,17 @@ void benchmark(size_t n, size_t m)
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_int_distribution<size_t> keydist(0, 4095);
-      std::uniform_int_distribution<size_t> lendist(50, 100);
+   // std::uniform_int_distribution<size_t> lendist(50, 100);
+      std::uniform_int_distribution<size_t> lendist(5, 10);
 
       std::unordered_map<int, std::string> um;
 
+      size_t l = 0;
+
       for (size_t i = 0; i < n; i++) {
          for (size_t j = 0; j < m; j++) 
-            um[keydist(gen)] = std::string('a', lendist(gen));
+         // um[keydist(gen)] = std::string('a', lendist(gen)); 
+            um.emplace(std::make_pair(keydist(gen), std::string(lendist(gen), 'a')));
          um.clear();
       }
    }
