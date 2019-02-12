@@ -5,9 +5,12 @@ CCFLAGS = -O2
 CCFLAGS = -DNDEBUG
 CCFLAGS += -fopenmp
 CCFLAGS	+= -Wno-narrowing
-CCFLAGS += -I$(BOOST_ROOT)
+CCFLAGS += -I$(BOOST_ROOT) -DHAVE_BOOST
 
-default: main
+PROGRAMS = stress
 
-main: main.cpp
-	$(CC) $(CCFLAGS) -o main main.cpp
+.PHONY: all
+all: stress
+
+$(PROGRAMS): % : %.cpp
+	$(CC) $(CCFLAGS) -o $@ $<
