@@ -7,10 +7,10 @@ CCFLAGS += -fopenmp
 CCFLAGS	+= -Wno-narrowing
 CCFLAGS += -I$(BOOST_ROOT) -DHAVE_BOOST
 
-PROGRAMS = stress
+PROGRAMS = glibc ht stress
 
 .PHONY: all
-all: stress
+all: $(PROGRAMS)
 
 $(PROGRAMS): % : %.cpp
 	$(CC) $(CCFLAGS) -o $@ $<
