@@ -1,11 +1,12 @@
 CC=g++
 
 CCFLAGS = -std=c++11
-CCFLAGS = -O2
-CCFLAGS = -DNDEBUG
 CCFLAGS += -fopenmp
 CCFLAGS	+= -Wno-narrowing
 CCFLAGS += -I$(BOOST_ROOT) -DHAVE_BOOST
+
+CCRELEASE_FLAGS = $(CCFLAGS) -O2 -DNDEBUG
+CCDEBUG_FLAGS = $(CCFLAGS) -O0 -g
 
 PROGRAMS = glibc ht stress
 
@@ -13,7 +14,8 @@ PROGRAMS = glibc ht stress
 all: $(PROGRAMS) malloc.so
 
 $(PROGRAMS): % : %.cpp
-	$(CC) $(CCFLAGS) -o $@ $<
+	$(CC) $(CCRELEASE_FLAGS) -o $@ $<
+	$(CC) $(CCDEBUG_FLAGS) -o $@-debug $<
 
 malloc.so: malloc.cpp
 	g++ -shared -fPIC -fopenmp -o $@ $< -lpthread -ldl

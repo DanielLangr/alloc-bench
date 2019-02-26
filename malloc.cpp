@@ -10,6 +10,8 @@
 #include <dlfcn.h>
 #include <omp.h>
 
+#include "colors.h"
+
 static __thread int hooked = 0;
 static __thread void *(*orig_malloc)(size_t) = NULL;
 
@@ -21,9 +23,11 @@ __attribute((destructor)) static void done(void)
    for (int tid = 0; tid < omp_get_max_threads(); tid++)
    {
       size_t nalloc = 0;
-      for (const auto& p : *maps[tid])
+      for (const auto& p : *maps[tid]) {
+         std::cout << green << p.first << " : " << p.second << reset << std::endl;
          nalloc += p.second;
-      std::cout << nalloc << std::endl;
+      }
+      std::cout << red << "Total number of allocations: " << nalloc << reset << std::endl;
    }
 }
 
