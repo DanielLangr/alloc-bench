@@ -17,6 +17,7 @@ static __thread void *(*orig_malloc)(size_t) = NULL;
 
 static constexpr size_t MAX_MAPS = 1024;
 std::unordered_map<size_t, size_t>* maps[MAX_MAPS] = { NULL };
+//static __thread size_t count = 0;
 
 __attribute((destructor)) static void done(void)
 {
@@ -24,11 +25,12 @@ __attribute((destructor)) static void done(void)
    {
       size_t nalloc = 0;
       for (const auto& p : *maps[tid]) {
-         std::cout << green << p.first << " : " << p.second << reset << std::endl;
+         std::cerr << p.first << " : " << p.second << std::endl;
          nalloc += p.second;
       }
-      std::cout << red << "Total number of allocations: " << nalloc << reset << std::endl;
+      std::cerr << "Total number of allocations: " << nalloc << std::endl;
    }
+// std::cerr << count << std::endl;
 }
 
 void hook(size_t len)
@@ -38,6 +40,7 @@ void hook(size_t len)
    if (!maps[tid])
       maps[tid] = new std::unordered_map<size_t, size_t>;
    maps[tid]->operator[](len)++;
+// count++;
 }
 
 extern "C"
@@ -48,7 +51,7 @@ void* malloc(size_t len)
    void* ret;
 
    if (!orig_malloc) 
-      orig_malloc = (void*(*)(size_t))dlsym(RTLD_NEXT, "malloc"); // invokes malloc internally?
+      orig_malloc = (void*(*)(size_t))dlsym(RTLD_NEXT, "malloc"); // invokes calloc internally?
 
    if (hooked)
       return (*orig_malloc)(len);

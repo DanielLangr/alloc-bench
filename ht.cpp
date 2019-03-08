@@ -1,13 +1,16 @@
+#include <cmath>
 #include <iostream>
 #include <random>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "colors.h"
 #include "timer.h"
 
 #ifdef HAVE_BOOST
 
+#include <boost/container/small_vector.hpp>
 #include <boost/pool/pool.hpp>
 
 template <typename T>
@@ -38,54 +41,47 @@ template <typename T, typename U> bool operator!=(const pool_alloc<T>& a, const 
 
 #endif /* HAVE_BOOST */
 
-void benchmark(size_t n, size_t m)
+void benchmark(size_t n)
 {
 #pragma omp parallel
    {
       std::random_device rd;
       std::mt19937 gen(rd());
-      std::uniform_int_distribution<size_t> keydist(0, 65535);
-      std::uniform_int_distribution<size_t> lendist(50, 100);
-   // std::uniform_int_distribution<size_t> lendist(5, 10);
+      std::uniform_int_distribution<int> keydist;
+      std::gamma_distribution<> lendist(2.0); 
 
-      std::unordered_map<int, std::string> um;
-   // std::unordered_map<int, std::string, std::hash<int>, std::equal_to<int>, pool_alloc<std::pair<const int, std::string>>> um;
+#if defined(HAVE_BOOST) && defined(SBO)
+      using value_t = boost::container::small_vector<float, SBO>;
+#else
+      using value_t = std::vector<float>;
+#endif
 
-      size_t l = 0;
+#if defined(HAVE_BOOST) && defined(MP)
+      std::unordered_map<int, value_t, std::hash<int>, std::equal_to<int>, pool_alloc<std::pair<const int, value_t>>> um;
+#else
+      std::unordered_map<key_t, value_t> um;
+#endif
+      um.reserve(n);
 
       for (size_t i = 0; i < n; i++) {
-         for (size_t j = 0; j < m; j++) {
-         // um[keydist(gen)] = std::string('a', lendist(gen)); 
-            auto p = um.emplace(std::make_pair(keydist(gen), std::string(lendist(gen), 'a')));
-         // donotopt += p.first->second.length();
-         }
-         um.clear();
+         size_t len = 1 + static_cast<size_t>(lendist(gen));
+         auto p = um.emplace(std::make_pair(keydist(gen), value_t(len)));
       }
    }
 }
 
 int main()
 {
-   static const size_t n = 4000;
-   static const size_t m = 10000;
+   static const size_t n = 10'000'000;
 
    chrono_timer<> timer(chrono_timer<>::start_now);
 
-   benchmark(n, m);
+   benchmark(n);
 
    timer.stop();
    auto d = timer.seconds();
    std::cout << cyan << "Absolute runtime = " << d << " [s]" << reset << std::endl;
 
-   auto nupdates = n * m;
-   auto rate = (double)nupdates / d / 1000000;
+   auto rate = (double)n / d / 1'000'000;
    std::cout << yellow <<  "Update rate per thread = " << rate << " [Mupdate/s]" << reset << std::endl;
-
-   auto nalloc = n * m * 2;
-   auto speed = (double)nalloc / d / 1000000;
-   std::cout << yellow <<  "Allocation rate per thread = " << speed << " [Malloc/s]" << reset << std::endl;
-   auto pace = (double)timer.nanoseconds() / (double)nalloc;
-   std::cout << magenta << "Average time per alloc = " << pace << " [ns]" << reset << std::endl;
-
-// std::cout << donotopt << std::endl;
 }
